@@ -20,6 +20,47 @@ FEATURE = {
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_architect_task_requests_architecture_and_user_story_artifacts(self):
+        task = build_tasks(FEATURE)["architect"]
+        self.assertIn("<!-- BEGIN architecture.md -->", task.description)
+        self.assertIn("<!-- BEGIN user_story.md -->", task.description)
+        self.assertIn("## Issue / feature", task.description)
+        self.assertIn("Transfer funds", task.description)
+        self.assertIn("Reject a transfer with insufficient funds", task.description)
+        self.assertIn("diagrama Mermaid", task.expected_output)
+        self.assertIn("logs estructurados", task.description)
+        self.assertIn("métricas", task.description)
+        self.assertIn("trazas", task.description)
+        self.assertIn("No desarrolles código", task.description)
+
+    def test_architect_task_reads_supplied_requirements_file(self):
+        from agents import architect
+
+        with tempfile.TemporaryDirectory() as tmp:
+            requirements_file = Path(tmp) / "REQUIREMENTS.md"
+            requirements_file.write_text("Contexto adicional: $issue_title", encoding="utf-8")
+            task = architect.build_task(FEATURE, requirements_file=requirements_file)
+        self.assertIn("Contexto adicional: Transfer funds", task.description)
+
+    def test_architect_specs_are_saved_as_separate_documents(self):
+        response = """<!-- BEGIN architecture.md -->
+# Arquitectura
+```mermaid
+flowchart LR
+    A[Cliente] --> B[API]
+```
+<!-- END architecture.md -->
+<!-- BEGIN user_story.md -->
+# Historia
+Como usuario, quiero una API.
+<!-- END user_story.md -->"""
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(app, "OUTPUT_DIR", Path(tmp)):
+                app.save_architect_specs(response)
+            specs = Path(tmp) / "specs"
+            self.assertIn("flowchart LR", (specs / "architecture.md").read_text())
+            self.assertIn("Como usuario", (specs / "user_story.md").read_text())
+
     def test_each_role_builds_its_own_task(self):
         tasks = build_tasks(FEATURE)
         self.assertEqual(

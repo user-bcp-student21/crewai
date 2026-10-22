@@ -15,6 +15,7 @@ Flujo:
 Estructura generada en output/:
   .checkpoint.json        ← estado de cada paso
   specs/
+    architecture.md
     user_story.md
     backend_spec.md
     frontend_spec.md
@@ -61,7 +62,7 @@ from pathlib import Path
 from crewai import Crew, Process
 
 from crew.workflow import build_tasks, include_data, workflow_steps
-from agents.architect import agent as architect_agent
+from agents.architect import ARCHITECTURE_SPEC_FILE, agent as architect_agent
 
 # ── MCP clients ────────────────────────────────────────────────────
 from mcp_projects import (
@@ -610,6 +611,25 @@ def save_spec(filename: str, content) -> None:
     print(f"  ✅ specs/{filename}")
 
 
+def save_architect_specs(content) -> None:
+    text = str(getattr(content, "raw", content) or "")
+    documents = {}
+    for filename in ("architecture.md", "user_story.md"):
+        start = f"<!-- BEGIN {filename} -->"
+        end = f"<!-- END {filename} -->"
+        if start not in text or end not in text or text.index(start) >= text.index(end):
+            raise ValueError(f"La respuesta de Arquitectura no contiene los marcadores válidos de {filename}.")
+        documents[filename] = text.split(start, 1)[1].split(end, 1)[0].strip()
+        if not documents[filename]:
+            raise ValueError(f"El documento {filename} generado por Arquitectura está vacío.")
+
+    specs_dir = OUTPUT_DIR / "specs"
+    specs_dir.mkdir(parents=True, exist_ok=True)
+    for filename, document in documents.items():
+        (specs_dir / filename).write_text(document + "\n", encoding="utf-8")
+        print(f"  ✅ specs/{filename}")
+
+
 # ── Mini-Crew: corre un único agente/tarea ─────────────────────────
 
 class StepLoadingSpinner:
@@ -1019,7 +1039,10 @@ def main():
             if decision == "s":
                 # APROBADO
                 print(f"\n✅ {step_label} aprobado. Guardando artefactos...")
-                save_spec(spec_file, output)
+                if step_key == "architect":
+                    save_architect_specs(output)
+                else:
+                    save_spec(spec_file, output)
                 if do_code:
                     extract_and_save_code(output)
                 approved_outputs[step_key] = output
@@ -1050,7 +1073,10 @@ def main():
     print("\n" + "=" * 60)
     print("✅ TODOS LOS PASOS APROBADOS")
     print("=" * 60)
-    print("  output/specs/            → " + " · ".join(step[3] for step in steps))
+    spec_files = [step[3] for step in steps]
+    if "architect" in [step[0] for step in steps]:
+        spec_files.insert(1, ARCHITECTURE_SPEC_FILE)
+    print("  output/specs/            → " + " · ".join(spec_files))
     print("  output/backend-quarkus/  → archivos .java extraídos")
     print("  output/frontend-angular/ → archivos .ts/.html extraídos")
     print("  output/db/               → .sql extraídos")

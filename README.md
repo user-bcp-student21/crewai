@@ -26,6 +26,8 @@ Cada participante edita el archivo de su rol:
 
 El orden es `architect → backend → frontend → testing → security → chapter`.
 Chapter reemplaza al LT como revisor final. La aprobación humana se conserva entre etapas.
+Arquitectura combina `REQUIREMENTS.md` con el Issue seleccionado (título, descripción y criterios
+de aceptación) para construir el contexto de su tarea. Mantén ese archivo en la raíz del proyecto.
 Consulta [TEAM.md](TEAM.md) para crear el repo de tu equipo y repartir los archivos.
 
 ## Preparar el entorno
@@ -85,6 +87,7 @@ o `n` para rechazar y detener el flujo. El checkpoint permite retomar los pasos 
 Los artefactos se guardan en `output/`:
 
 - `specs/user_story.md`: especificación del arquitecto.
+- `specs/architecture.md`: arquitectura propuesta por el arquitecto.
 - `specs/backend_spec.md` y `specs/frontend_spec.md`: implementaciones.
 - `specs/testing_report.md`: casos, tests y comandos. Los resultados quedan pendientes de ejecución humana.
 - `specs/security_report.md`: hallazgos y verificaciones de seguridad.
