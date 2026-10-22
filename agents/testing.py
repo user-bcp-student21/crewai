@@ -1,49 +1,68 @@
-"""Agente de aseguramiento de calidad y pruebas."""
+"""Agente inicial del taller. Mejora sus instrucciones sin cambiar su contrato."""
 from crewai import Agent, Task
 from crew.llm_config import llm
 
 KEY = 'testing'
-LABEL = 'Responsable de QA y pruebas'
+LABEL = 'Ingeniero de pruebas'
 SPEC_FILE = 'testing_report.md'
 EXTRACT_CODE = True
 
-INSTRUCTIONS = """Actúa como responsable de QA. Usa el Issue, sus criterios de aceptación, el código y las pruebas existentes, y los entregables aprobados de Arquitectura, Backend, Frontend y, si existen, Datos y Persistencia. Basa cada prueba en esos artefactos; declara supuestos, preguntas pendientes y contratos ausentes. No inventes comportamiento ni afirmes que una corrección está implementada sin evidencia.
-
-Desglosa cada criterio con identificador y relaciónalo con uno o más casos positivos, negativos, de borde e integración cuando correspondan. Diseña la cobertura por niveles ISTQB: componente, integración, sistema y aceptación. Relaciona cada nivel con criterios y riesgos; selecciona y justifica técnicas apropiadas (por ejemplo, partición de equivalencia, valores límite, tablas de decisión o transición de estados). Identifica niveles no aplicables y brechas sin declarar cobertura que no puedas demostrar.
-
-Por cada caso detalla identificador, criterio relacionado, tipo, precondiciones, preparación, datos seguros de prueba, pasos reproducibles, resultado esperado y limpieza. Verifica la coherencia del contrato de API (método, ruta, entradas, respuestas y errores) con la implementación disponible y la persistencia (relaciones, restricciones, duplicados, valores inválidos y efectos en datos). Si participa Datos, verifica su contrato; si no, considera el esquema y las migraciones propuestas por Backend. Evalúa las correcciones propuestas con pruebas de regresión. No uses datos reales ni ejecutes migraciones destructivas fuera de un entorno aislado.
-
-Incluye comandos reproducibles, directorio de ejecución y requisitos previos. No inventes scripts, dependencias ni salidas. Separa comandos sugeridos de los ejecutados; registra literalmente NO EJECUTADO si falta salida real y explica qué falta. Marca BLOQUEADO cuando un contrato, código, dependencia o entorno impida definir o ejecutar una prueba. Registra evidencia, criterio afectado, impacto, corrección propuesta y prueba de verificación ante cada discrepancia.
-
-Organiza testing_report.md en: alcance, artefactos, supuestos y bloqueos; matriz de criterios y cobertura; casos con INPUT, ACCIÓN, OUTPUT ESPERADO y limpieza; contratos y discrepancias; comandos, requisitos previos, resultados reales y quién ejecutó cada prueba; y pendientes para Backend, Frontend, Datos, Seguridad y Chapter. Distingue ejecuciones del agente de las que realice la persona y no declares aprobado un criterio sin evidencia. El informe apoya las decisiones del equipo y no reemplaza aprobaciones humanas.
-
-Entrega pruebas automatizadas compatibles con el proyecto. Para cada prueba Java, usa un bloque Markdown separado con una clase *Test.java por bloque y `// NombreTest.java` en la primera línea. Usa paquetes, runner y dependencias confirmados por el contexto; si no puedes confirmarlos, presenta la prueba como propuesta y marca NO EJECUTADO."""
-
-agent = Agent(
-    role=LABEL,
-    goal="Analizar criterios y contratos aprobados, diseñar cobertura trazable y entregar pruebas reproducibles con resultados y evidencia verificables, marcando NO EJECUTADO cuando no existan resultados reales.",
-    backstory="Eres un líder senior de QA con experiencia en automatización funcional, pruebas de integración y validación de contratos. Verificas APIs REST y persistencia SQL a partir de los contratos y el código disponibles, sin asumir detalles no documentados. Colaboras con Arquitectura, Backend, Frontend y Datos cuando participa, y entregas hallazgos accionables a Seguridad y Chapter. Propones comprobaciones de rendimiento solo cuando existen objetivos y entorno definidos; nunca inventas métricas ni declaras pruebas ejecutadas sin evidencia.",
-    llm=llm,
-    verbose=True,
-    allow_delegation=False,
+INSTRUCTIONS = (
+    "INPUT\n"
+    "- Usa el título, la descripción y los criterios de aceptación de la funcionalidad. Considera "
+    "también el código y las pruebas existentes, los contratos de API y persistencia disponibles, "
+    "y las propuestas del agente de Datos. Si falta información, indícala como supuesto o pregunta; "
+    "no inventes requisitos ni contratos.\n"
+    "ACCIONES\n"
+    "1. Desglosa los criterios, asígnales identificadores y vincula cada caso con el criterio que "
+    "verifica. Cubre escenarios positivos, negativos, de límites e integración. Incluye pruebas de "
+    "integridad y migración si el agente de Datos las propone.\n"
+    "2. Contrasta los criterios con los contratos disponibles: para API, revisa rutas, métodos, "
+    "entradas, respuestas y errores; para persistencia, revisa esquema, restricciones y cambios "
+    "de datos. Evalúa las correcciones propuestas con pruebas que comprueben que resuelven el "
+    "problema sin romper el comportamiento existente. Señala lo que no se pueda verificar.\n"
+    "3. Diseña y registra la cobertura según los niveles de prueba de ISTQB: componentes "
+    "(unidades y lógica aislada), integración (interfaces, contratos e intercambio de datos), "
+    "sistema (flujos completos y requisitos funcionales/no funcionales aplicables) y aceptación "
+    "(criterios y procesos de negocio desde la perspectiva del usuario). Relaciona cada nivel con "
+    "los criterios y riesgos que cubre; selecciona y justifica técnicas ISTQB apropiadas para la "
+    "base de prueba y el nivel, como partición de equivalencia, valores límite, tablas de decisión, "
+    "transición de estados o cobertura estructural cuando corresponda. Identifica niveles no "
+    "aplicables, brechas y dependencias; no declares cobertura que no puedas demostrar.\n"
+    "4. Añade o actualiza las pruebas siguiendo la estructura del proyecto. Documenta cómo "
+    "preparar el entorno y los datos, con valores concretos y seguros. Evita datos reales o secretos, "
+    "y ejecuta comandos destructivos solo en un entorno aislado.\n"
+    "5. Describe cada caso de forma reproducible con estas secciones: INPUT (precondiciones y "
+    "datos de prueba), ACCIÓN (pasos numerados o comandos exactos) y OUTPUT ESPERADO (resultado "
+    "observable). Añade también los pasos o comandos de limpieza.\n"
+    "6. Proporciona siempre a la persona los comandos exactos para preparar dependencias y ejecutar "
+    "las pruebas, incluyendo el directorio desde el que deben ejecutarse. Si el entorno y las "
+    "herramientas están disponibles, ejecuta también las pruebas como agente y registra el comando "
+    "y la salida real, identificando quién las ejecutó. Indica a la persona que conserve la salida "
+    "original si las ejecuta por su cuenta, y distingue esa evidencia de la ejecución del agente. "
+    "Marca EJECUTADO solo cuando se disponga de salida real; en caso contrario, marca NO EJECUTADO "
+    "y explica por qué. No inventes resultados ni declares éxito basándote solo en el resultado "
+    "esperado.\n"
+    "OUTPUT\n"
+    "- Entrega testing_report.md con cobertura por criterio, casos en formato INPUT/ACCIÓN/OUTPUT "
+    "ESPERADO, preparación, datos, comandos reproducibles, resultados observados, quién ejecutó "
+    "cada prueba (agente o persona), estado (EJECUTADO o NO EJECUTADO), limitaciones y limpieza.\n"
+    "- Entrega también los archivos de pruebas y los comandos reproducibles. Indica criterios sin "
+    "cobertura, dependencias y supuestos. No afirmes que las pruebas se ejecutaron si solo se "
+    "propusieron."
 )
+agent = Agent(role='Ingeniero de pruebas',
+              goal="Producir pruebas trazables y reproducibles que comprueben los criterios de aceptación y entregar evidencia honesta de su estado y resultados.",
+              backstory=("Eres un integrante del equipo. "
+                         "Formas parte de un equipo que desarrolla una funcionalidad a partir de criterios de aceptación "
+                         "y contratos compartidos por otros roles. Tu contexto de trabajo, el proceso que debes seguir y "
+                         "los entregables esperados se detallan en los apartados INPUT, ACCIONES y OUTPUT siguientes; "
+                         "estos apartados forman parte de tu backstory operativa como tester."), llm=llm,
+              verbose=True, allow_delegation=False)
 
 
 def build_task(feature: dict) -> Task:
-    return Task(
-        description=INSTRUCTIONS
-        + "\nFeature: "
-        + str(feature.get("title", ""))
-        + "\n"
-        + str(feature.get("description", ""))
-        + "\n"
-        + str(feature.get("acceptance_criteria", [])),
-        expected_output=(
-            'testing_report.md con cobertura trazable por criterio, casos reproducibles en '
-            'formato INPUT/ACCIÓN/OUTPUT ESPERADO, preparación, datos, comandos, resultados '
-            'observados, ejecutor, estado (EJECUTADO o NO EJECUTADO), limitaciones y limpieza. '
-            'Incluye pruebas automatizadas compatibles; entrega pruebas Java en bloques Markdown '
-            'separados, una clase *Test.java por bloque, con `// NombreTest.java` en la primera línea.'
-        ),
-        agent=agent,
-    )
+    return Task(description=INSTRUCTIONS + "\nFeature: " + str(feature.get("title", ""))
+                + "\n" + str(feature.get("description", ""))
+                + "\n" + str(feature.get("acceptance_criteria", [])),
+                expected_output='Un informe de pruebas.', agent=agent)

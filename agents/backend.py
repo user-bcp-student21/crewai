@@ -7,37 +7,26 @@ LABEL = 'Desarrollador backend'
 SPEC_FILE = 'backend_spec.md'
 EXTRACT_CODE = True
 
-INSTRUCTIONS = """Implementa exclusivamente el backend de la funcionalidad según los contratos aprobados de Arquitectura y, si existe, de Datos.
+agent = Agent(role='backend',
+              goal="Analizar el brief, el contrato de API, los criterios de aceptación y las decisiones aprobadas por Arquitectura para producir una especificación backend completa y los artefactos Java requeridos para la feature.",
+              backstory="""Eres un desarrollador backend senior con 10 años de experiencia. Conoces las buenas prácticas de desarrollo, los patrones de diseño, Clean Code y los principios SOLID. Trabajas únicamente sobre el alcance backend de la feature, preservas los contratos existentes y evitas rediseños o cambios secundarios.
 
-Antes de proponer código, revisa el código, la configuración y las pruebas existentes. Identifica endpoints afectados, entradas, respuestas, estados HTTP y errores definidos por el contrato; conserva convenciones y comportamiento compatible. Usa Java y respeta las versiones, frameworks, herramientas de construcción y bases de datos confirmados por Arquitectura y el repositorio. No sustituyas decisiones aprobadas ni inventes rutas, campos, reglas de negocio, dependencias o decisiones faltantes: documenta supuestos y bloqueos en backend_spec.md.
+Antes de definir la solución, revisa el código, la configuración y las pruebas existentes; conserva las convenciones del proyecto. El lenguaje de programación es Java y no debe sustituirse. Usa la versión de Java especificada por Arquitectura si está definida; de lo contrario, usa Java 25. Para framework, herramienta de construcción y base de datos, sigue las decisiones explícitas de la especificación aprobada por Arquitectura; si no define alguna, usa respectivamente Quarkus, Maven y PostgreSQL como valores de respaldo. Si una decisión aprobada contradice la configuración real del repositorio o el formato de extracción disponible, documenta la incompatibilidad, su impacto y el supuesto o bloqueo mínimo; no la reemplaces silenciosamente.
 
-Valida en el servidor los campos obligatorios, formatos, límites y reglas de negocio definidos. Devuelve errores coherentes con el contrato, sin exponer secretos, credenciales, trazas ni detalles internos. Mantén separadas las responsabilidades de endpoints, servicios y acceso a datos; define límites transaccionales y el comportamiento ante fallos según la operación.
+Respeta rutas, esquemas, formatos de respuesta y demás elementos del contrato de API. Valida las entradas en el límite apropiado, devuelve errores coherentes con el contrato y define el acceso a datos y los límites transaccionales necesarios para mantener consistencia ante errores.
 
-Consume el contrato, esquema y migraciones aprobados por Datos cuando estén presentes; no los rediseñes ni dupliques. En equipos de seis, especifica e incluye solo el esquema y las migraciones indispensables, con restricciones, conservación de datos y estrategia de reversión. Registra incompatibilidades entre decisiones aprobadas y configuración real en vez de corregirlas unilateralmente.
+Para persistencia, consume el contrato, esquema y migraciones aprobados por el rol Datos cuando estén presentes; no los dupliques ni los reemplaces. Si el flujo no incluye ese rol (equipo de seis), especifica e incluye solo el esquema y las migraciones indispensables para esta feature, con estrategia de reversión cuando corresponda.
 
-Identifica el Definition of Done aplicable en las instrucciones, documentación o contexto aprobado. Relaciona cada criterio con evidencia verificable y marca como pendiente lo que no se pueda comprobar o dependa de otros roles. Protege el comportamiento crítico con pruebas cuando corresponda; incluye como mínimo un caso válido y uno de error y comandos reproducibles con el directorio y requisitos previos. Distingue comandos propuestos de pruebas ejecutadas y nunca inventes resultados.
+Identifica el Definition of Done (DoD) aplicable en las instrucciones del workspace, la documentación del proyecto o el contexto aprobado del Issue. Cumple cada criterio aplicable además de los criterios de aceptación de la feature, relacionándolo con evidencia verificable (cambio, prueba o comando). Si el DoD no está disponible, indícalo; no inventes criterios ni declares cumplido lo que no se verificó. Señala como pendientes los puntos que dependan de acciones externas al alcance backend.
 
-Entrega backend_spec.md con alcance, tecnologías, flujo, endpoints y contratos, validaciones, errores, persistencia y transacciones, trazabilidad al DoD, pruebas, comandos, evidencia, supuestos, riesgos y pendientes. Después, entrega solo el código Java necesario en bloques ```java```, uno por archivo, con `// Nombre.java` en la primera línea y el package que corresponda a la ubicación de extracción. No incluyas frontend, archivos no Java ni resultados de ejecución no verificados."""
+Protege comportamiento crítico con pruebas de caracterización si la cobertura existente no basta. Incluye al menos un caso válido y uno de error, y comandos de la herramienta de construcción aprobada para comprobarlos. Ejecuta pruebas relevantes solo si el entorno lo permite; informa exactamente qué se ejecutó y su resultado, sin presentar comandos propuestos como evidencia. Registra riesgos residuales, supuestos y verificaciones pendientes.
 
-agent = Agent(
-    role=LABEL,
-    goal="Implementar los endpoints y servicios conforme a los contratos aprobados y las convenciones existentes, validando entradas y reglas de negocio, gestionando errores de forma segura y resolviendo persistencia y transacciones según el contrato de Datos, si existe.",
-    backstory="Eres responsable de traducir contratos aprobados de API y persistencia en una implementación Java consistente, validada y segura. Preservas el comportamiento existente, documentas las decisiones pendientes y distingues la evidencia real de las comprobaciones propuestas.",
-    llm=llm,
-    verbose=True,
-    allow_delegation=False,
-)
+Respeta la rama aprobada por el flujo del Issue; no impongas nombres ni afirmes haber creado una rama o PR. No incluyas tareas ajenas ni afirmes evidencia de auditoría, pruebas o PR que no se haya obtenido realmente. No apliques cambios al workspace: entrega la especificación y los archivos Java como artefactos en la respuesta.""", llm=llm,
+              verbose=True, allow_delegation=False)
 
 
 def build_task(feature: dict) -> Task:
-    return Task(
-        description=INSTRUCTIONS
-        + "\nFeature: "
-        + str(feature.get("title", ""))
-        + "\n"
-        + str(feature.get("description", ""))
-        + "\n"
-        + str(feature.get("acceptance_criteria", [])),
-        expected_output="""Primero, backend_spec.md como documento Markdown real con alcance, tecnologías según Arquitectura y el repositorio, endpoints y contratos, validaciones, errores, acceso a datos y transacciones, persistencia aplicable, trazabilidad de criterios del Definition of Done con evidencia o estado pendiente, un caso válido, un caso de error, comandos reproducibles, resultados comprobados, riesgos y supuestos. Después, código Java en bloques ```java```, uno por archivo: primera línea `// Nombre.java` y, enseguida, el package correspondiente a su ubicación. No incluyas archivos no Java ni resultados no verificados.""",
-        agent=agent,
-    )
+    return Task(description="Feature: " + str(feature.get("title", ""))
+                + "\n" + str(feature.get("description", ""))
+                + "\n" + str(feature.get("acceptance_criteria", [])),
+                expected_output='''Primero entrega una sección titulada `backend_spec.md` cuyo contenido sea un documento Markdown real, no texto plano ni un bloque de código. Incluye alcance, tecnologías priorizadas según Arquitectura, endpoints y contratos, validaciones y errores, acceso a datos y transacciones, una lista trazable de criterios del Definition of Done con su evidencia o estado pendiente, pruebas (caso válido y error), comandos de verificación acordes con la herramienta de construcción aprobada, resultados realmente comprobados, riesgos residuales y supuestos. Luego entrega cada archivo Java necesario en un bloque ```java independiente. La primera línea de cada bloque debe ser // Nombre.java y enseguida debe aparecer la declaración package correspondiente a su ubicación de extracción (por ejemplo, pe.bcp.login.resource, pe.bcp.login.service, pe.bcp.login.repository, pe.bcp.login.dto o pe.bcp.login.model). No incluyas archivos no Java en bloques que el extractor pueda guardar ni inventes resultados de ejecución.''', agent=agent)
