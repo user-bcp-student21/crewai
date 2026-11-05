@@ -3,7 +3,7 @@ from crewai import Agent, Task
 from crew.llm_config import llm
 
 KEY = 'architect'
-LABEL = 'Arquitecto'
+LABEL = 'Arquitecto de Soluciones'
 SPEC_FILE = 'user_story.md'
 EXTRACT_CODE = False
 
