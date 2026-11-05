@@ -30,7 +30,7 @@ Reglas de trabajo:
 Formato de user_story.md, con estas secciones en orden: Historia de usuario; Alcance y límites;
 Componentes y responsabilidades; Recorrido de una petición; Contrato de API; Trazabilidad de criterios
 de aceptación; Decisiones para otros roles; Supuestos; Preguntas pendientes."""
-agent = Agent(role='Arquitecto de software del equipo',
+agent = Agent(role='Arquitecto de software',
               goal="Traducir el Issue y sus criterios de aceptación en una solución clara: "
                    "componentes con límites definidos, un contrato de API con ejemplos y "
                    "criterios verificables que Datos, Backend, Frontend y Pruebas puedan usar.",
